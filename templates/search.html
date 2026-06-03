@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Search — FastAPI Items{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h1>Search Items</h1>
+    <p>Find items by any field in the database</p>
+</div>
+
+<div class="card card-pad" style="margin-bottom: 32px;">
+    <form method="GET" action="/page/search">
+        <div class="search-bar">
+            <div class="form-group">
+                <label class="form-label">Column</label>
+                <select name="column" class="form-control" required>
+                    <option value="">Select a column</option>
+                    <option value="name" {% if column == 'name' %}selected{% endif %}>Name</option>
+                    <option value="description" {% if column == 'description' %}selected{% endif %}>Description</option>
+                    <option value="note" {% if column == 'note' %}selected{% endif %}>Note</option>
+                    <option value="date_posted" {% if column == 'date_posted' %}selected{% endif %}>Date Posted</option>
+                    <option value="price" {% if column == 'price' %}selected{% endif %}>Price</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Value</label>
+                <input type="text" name="value" class="form-control" value="{{ value or '' }}" placeholder="Enter search value">
+            </div>
+            <div style="align-self: flex-end;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% if column and value %}
+    {% if items is not none %}
+        {% if items %}
+        <div class="alert alert-success">
+            <div class="alert-title"><i class="fas fa-check-circle"></i> Search Results</div>
+            <div class="alert-body">Found {{ items|length }} item{% if items|length != 1 %}s{% endif %} where {{ column }} = {{ value }}</div>
+        </div>
+
+        <div class="card">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Price</th>
+                            <th>Description</th>
+                            <th>Note</th>
+                            <th>Date Posted</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td><span style="color: var(--primary); font-weight: 600;">{{ item.id }}</span></td>
+                            <td>{{ item.name }}</td>
+                            <td>${{ "%.2f"|format(item.price) }}</td>
+                            <td>{{ item.description }}</td>
+                            <td>{{ item.note }}</td>
+                            <td>{{ item.date_posted }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-search"></i>
+            <h3>No Results Found</h3>
+            <p>No items found where {{ column }} = {{ value }}</p>
+            <div style="display: flex; gap: 12px; justify-content: center; margin-top: 16px;">
+                <a href="/page/search" class="btn btn-ghost">
+                    <i class="fas fa-redo"></i> Try Another Search
+                </a>
+                <a href="/page/all" class="btn btn-ghost">
+                    <i class="fas fa-list"></i> View All Items
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    {% endif %}
+{% else %}
+<div class="card card-pad" style="text-align: center;">
+    <i class="fas fa-search" style="font-size: 48px; color: var(--text-muted); margin-bottom: 20px;"></i>
+    <h3 style="margin-bottom: 12px;">Search Items</h3>
+    <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto 24px;">
+        Select a column and enter a value to search for items in the database.
+        You can search by name, description, note, date, or price.
+    </p>
+</div>
+{% endif %}
+
+{% endblock %}

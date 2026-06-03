@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}All Items — FastAPI Items Management{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h1 class="page-title">All Items</h1>
+    <p class="page-subtitle">Browse and manage all items in your database</p>
+</div>
+
+{% if items %}
+<!-- Stats -->
+<div class="stats-grid" style="margin-bottom: 40px;">
+    <div class="card stat-card">
+        <i class="fas fa-boxes stat-icon"></i>
+        <div class="stat-number">{{ items|length }}</div>
+        <div class="stat-label">Total Items</div>
+    </div>
+    <div class="card stat-card">
+        <i class="fas fa-dollar-sign stat-icon"></i>
+        <div class="stat-number">${{ "%.2f"|format(items|sum(attribute='price')) }}</div>
+        <div class="stat-label">Total Value</div>
+    </div>
+    <div class="card stat-card">
+        <i class="fas fa-calendar stat-icon"></i>
+        <div class="stat-number">{{ (items|max(attribute='date_posted')).date_posted[:4] if items else 'N/A' }}</div>
+        <div class="stat-label">Latest Year</div>
+    </div>
+</div>
+
+<!-- Items Table -->
+<div class="card card-pad">
+    <h2 class="card-title">
+        <i class="fas fa-list"></i>
+        Items Database
+    </h2>
+    
+    <div class="alert alert-success">
+        <div class="alert-title">
+            <i class="fas fa-check-circle alert-icon"></i>
+            Data Loaded Successfully
+        </div>
+        <div class="alert-body">
+            Found {{ items|length }} item{% if items|length != 1 %}s{% endif %} in the database.
+        </div>
+    </div>
+    
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Description</th>
+                    <th>Note</th>
+                    <th>Date Posted</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>
+                        <span style="color: var(--primary); font-weight: 700; background: rgba(99, 102, 241, 0.1); padding: 6px 12px; border-radius: 6px;">
+                            #{{ item.id }}
+                        </span>
+                    </td>
+                    <td><strong>{{ item.name }}</strong></td>
+                    <td style="color: var(--success); font-weight: 700;">
+                        ${{ "%.2f"|format(item.price) }}
+                    </td>
+                    <td>
+                        {% if item.description %}
+                            {{ item.description[:50] }}{% if item.description|length > 50 %}...{% endif %}
+                        {% else %}
+                            <span style="color: var(--text-muted);">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.note %}
+                            {{ item.note[:30] }}{% if item.note|length > 30 %}...{% endif %}
+                        {% else %}
+                            <span style="color: var(--text-muted);">—</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.date_posted }}</td>
+                    <td>
+                        <div style="display: flex; gap: 8px;">
+                            <a href="javascript:viewItem({{ item.id }})" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem;">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="javascript:deleteItem({{ item.id }})" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.85rem;">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div style="margin-top: 32px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <span style="color: var(--text-muted); font-size: 0.9rem;">
+                Showing {{ items|length }} item{% if items|length != 1 %}s{% endif %}
+            </span>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <a href="/page/create" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                Add New Item
+            </a>
+            <a href="/page/search" class="btn btn-outline">
+                <i class="fas fa-search"></i>
+                Search Items
+            </a>
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Empty State -->
+<div class="empty-state">
+    <i class="fas fa-inbox empty-icon"></i>
+    <h2 class="empty-title">No Items Found</h2>
+    <p class="empty-description">
+        Your database is empty. Start by creating your first item to manage.
+    </p>
+    <div style="display: flex; gap: 16px; justify-content: center;">
+        <a href="/page/create" class="btn btn-primary">
+            <i class="fas fa-plus"></i>
+            Create First Item
+        </a>
+        <a href="/" class="btn btn-outline">
+            <i class="fas fa-home"></i>
+            Back to Home
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<script>
+async function viewItem(id) {
+    try {
+        const response = await fetch(`/items/${id}`);
+        if (response.ok) {
+            const item = await response.json();
+            alert(`Item #${item.id}\nName: ${item.name}\nPrice: $${parseFloat(item.price).toFixed(2)}\nDescription: ${item.description || 'None'}\nNote: ${item.note || 'None'}\nDate: ${item.date_posted}`);
+        } else {
+            alert('Item not found!');
+        }
+    } catch (error) {
+        alert('Failed to fetch item details.');
+    }
+}
+
+async function deleteItem(id) {
+    if (!confirm(`Are you sure you want to delete item #${id}? This action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/items/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            alert(`Successfully deleted item #${id}: ${result.item.name}`);
+            window.location.reload();
+        } else {
+            const error = await response.json();
+            alert(`Error: ${error.detail || 'Failed to delete item'}`);
+        }
+    } catch (error) {
+        alert('Failed to connect to server.');
+    }
+}
+</script>
+
+{% endblock %}

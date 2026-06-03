@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Delete Items — FastAPI Items{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h1>Delete Items</h1>
+    <p>Remove items from the database by ID</p>
+</div>
+
+<div class="card card-pad" style="margin-bottom: 32px;">
+    <h2 style="margin-bottom: 20px;">Delete Item</h2>
+    <form id="deleteForm">
+        <div class="form-group">
+            <label class="form-label">Item ID</label>
+            <input type="number" id="itemId" class="form-control" required placeholder="Enter item ID to delete">
+        </div>
+        <div style="margin-top: 20px;">
+            <button type="button" onclick="deleteItem()" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Delete Item
+            </button>
+        </div>
+    </form>
+</div>
+
+<div id="result" style="display: none; margin-top: 32px;"></div>
+
+<script>
+async function deleteItem() {
+    const itemId = document.getElementById('itemId').value;
+    if (!itemId) {
+        alert('Please enter an item ID');
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to delete item #${itemId}? This action cannot be undone.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/items/${itemId}`, {
+            method: 'DELETE'
+        });
+
+        const resultDiv = document.getElementById('result');
+        resultDiv.style.display = 'block';
+
+        if (response.ok) {
+            const data = await response.json();
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <div class="alert-title"><i class="fas fa-check-circle"></i> Success!</div>
+                    <div class="alert-body">Item deleted successfully.</div>
+                </div>
+                <div class="card card-pad" style="margin-top: 16px;">
+                    <h3 style="margin-bottom: 16px;">Deleted Item Details</h3>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                        <div class="form-group">
+                            <label class="form-label">ID</label>
+                            <div class="form-control" style="background: var(--bg-card);">${data.item.id}</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Name</label>
+                            <div class="form-control" style="background: var(--bg-card);">${data.item.name}</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Price</label>
+                            <div class="form-control" style="background: var(--bg-card);">$${parseFloat(data.item.price).toFixed(2)}</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Date Posted</label>
+                            <div class="form-control" style="background: var(--bg-card);">${data.item.date_posted}</div>
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label class="form-label">Description</label>
+                            <div class="form-control" style="background: var(--bg-card); min-height: 60px;">${data.item.description || 'None'}</div>
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label class="form-label">Note</label>
+                            <div class="form-control" style="background: var(--bg-card); min-height: 60px;">${data.item.note || 'None'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('deleteForm').reset();
+        } else {
+            const error = await response.json();
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <div class="alert-title"><i class="fas fa-exclamation-circle"></i> Error</div>
+                    <div class="alert-body">${error.detail || 'Failed to delete item'}</div>
+                </div>
+            `;
+        }
+    } catch (error) {
+        const resultDiv = document.getElementById('result');
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <div class="alert-title"><i class="fas fa-exclamation-circle"></i> Network Error</div>
+                <div class="alert-body">Failed to connect to server. Make sure the server is running.</div>
+            </div>
+        `;
+    }
+}
+</script>
+
+{% endblock %}
