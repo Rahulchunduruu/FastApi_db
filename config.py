@@ -12,9 +12,4 @@ class Config:
 
     if not DATABASE_URL:
         raise ValueError("DATABASE_URL not found")
-
-    if not API_KEY:
-        raise ValueError("API_KEY not found")
-
-    if not EXTERNAL_API_URL:
-        raise ValueError("EXTERNAL_API_URL not found")
+    
